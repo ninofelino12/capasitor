@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#f5f6fb">
+    <meta name="description" content="Simpan dan buka tautan favorit Anda dengan cepat.">
+    <title>Linkspace — Tautan Favorit</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #202335;
+        background: #f5f6fb;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        --primary: #6258e8;
+        --primary-dark: #4d43ce;
+        --muted: #777b91;
+        --surface: #fff;
+        --line: #e9eaf2;
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; min-width: 320px; min-height: 100vh; }
+      button, input { font: inherit; }
+      button { -webkit-tap-highlight-color: transparent; }
+      .app-shell { min-height: 100vh; padding-bottom: calc(92px + var(--safe-bottom)); }
+      .topbar {
+        position: sticky;
+        z-index: 3;
+        top: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 68px;
+        padding: 10px 20px;
+        background: rgb(245 246 251 / 94%);
+        backdrop-filter: blur(16px);
+      }
+      .brand { display: flex; align-items: center; gap: 11px; }
+      .brand-mark {
+        display: grid;
+        width: 40px;
+        height: 40px;
+        place-items: center;
+        border-radius: 14px;
+        color: #fff;
+        background: linear-gradient(145deg, #8279ff, #5549db);
+        box-shadow: 0 6px 14px rgb(98 88 232 / 25%);
+      }
+      .brand-mark svg { width: 21px; height: 21px; }
+      .brand-name { margin: 0; font-size: 17px; font-weight: 750; letter-spacing: -.4px; }
+      .brand-subtitle { margin: 2px 0 0; color: var(--muted); font-size: 11px; }
+      .count-pill {
+        padding: 7px 11px;
+        border: 1px solid #e8e7ff;
+        border-radius: 999px;
+        color: var(--primary-dark);
+        background: #efeeff;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      main { width: min(100% - 32px, 620px); margin: 0 auto; }
+      .hero { padding: 15px 2px 18px; }
+      .eyebrow { margin: 0 0 7px; color: var(--primary); font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
+      h1 { margin: 0; font-size: clamp(25px, 7vw, 32px); line-height: 1.15; letter-spacing: -1px; }
+      .hero-copy { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+      .search-wrap { position: relative; margin-bottom: 20px; }
+      .search-wrap svg { position: absolute; top: 15px; left: 16px; width: 19px; color: #9295a8; }
+      .search {
+        width: 100%;
+        height: 50px;
+        padding: 0 16px 0 45px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        outline: none;
+        background: var(--surface);
+        box-shadow: 0 3px 12px rgb(34 38 68 / 3%);
+        transition: border-color .2s, box-shadow .2s;
+      }
+      .search:focus, .field:focus { border-color: #928bff; box-shadow: 0 0 0 3px rgb(98 88 232 / 12%); }
+      .section-heading { display: flex; align-items: center; justify-content: space-between; margin: 0 2px 12px; }
+      .section-heading h2 { margin: 0; font-size: 16px; letter-spacing: -.2px; }
+      .section-hint { color: var(--muted); font-size: 12px; }
+      .link-list { display: grid; gap: 11px; }
+      .link-card {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        min-height: 76px;
+        padding: 12px 13px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        color: inherit;
+        text-align: left;
+        background: var(--surface);
+        box-shadow: 0 4px 14px rgb(34 38 68 / 3%);
+        cursor: pointer;
+        transition: transform .15s, box-shadow .15s;
+      }
+      .link-card:active { transform: scale(.985); }
+      .site-icon {
+        display: grid;
+        flex: 0 0 46px;
+        width: 46px;
+        height: 46px;
+        place-items: center;
+        margin-right: 13px;
+        border-radius: 15px;
+        color: var(--icon-color, #6258e8);
+        background: var(--icon-bg, #efeeff);
+        font-size: 15px;
+        font-weight: 800;
+      }
+      .link-info { min-width: 0; flex: 1; }
+      .link-name { display: block; overflow: hidden; font-size: 15px; font-weight: 720; text-overflow: ellipsis; white-space: nowrap; }
+      .link-url { display: block; overflow: hidden; margin-top: 4px; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+      .link-category { display: block; width: fit-content; margin-top: 7px; padding: 4px 8px; border-radius: 999px; color: #6258c9; background: #f0efff; font-size: 10px; font-weight: 700; }
+      .card-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 2px; margin-left: 5px; }
+      .icon-button {
+        display: grid;
+        width: 38px;
+        height: 42px;
+        place-items: center;
+        border: 0;
+        border-radius: 12px;
+        color: #8d90a3;
+        background: transparent;
+        cursor: pointer;
+      }
+      .icon-button:hover { color: #d34f64; background: #fff0f2; }
+      .icon-button svg { width: 18px; height: 18px; }
+      .open-icon { width: 17px; height: 17px; margin-left: 2px; color: #a4a6b5; }
+      .empty-state { padding: 35px 20px; border: 1px dashed #d9dbea; border-radius: 18px; color: var(--muted); text-align: center; background: rgb(255 255 255 / 55%); font-size: 14px; }
+      .empty-state strong { display: block; margin-bottom: 6px; color: #34374a; font-size: 15px; }
+      .data-panel { padding-top: 16px; }
+      .data-panel h1 { font-size: 26px; }
+      .data-panel .hero-copy { margin-bottom: 18px; }
+      .json-box {
+        width: 100%;
+        min-height: 250px;
+        padding: 15px;
+        resize: vertical;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        outline: none;
+        color: #34374a;
+        background: #fff;
+        font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      .data-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+      .button {
+        display: inline-flex;
+        min-height: 46px;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0 13px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        color: #37394c;
+        background: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .button svg { width: 17px; height: 17px; }
+      .button.primary { border-color: var(--primary); color: #fff; background: var(--primary); }
+      .button.danger { grid-column: 1 / -1; color: #c24d60; }
+      .bottom-nav {
+        position: fixed;
+        z-index: 4;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        display: grid;
+        height: calc(74px + var(--safe-bottom));
+        grid-template-columns: 1fr 76px 1fr;
+        align-items: center;
+        padding: 0 24px var(--safe-bottom);
+        border-top: 1px solid rgb(232 233 241 / 85%);
+        background: rgb(255 255 255 / 96%);
+        box-shadow: 0 -7px 22px rgb(34 38 68 / 4%);
+      }
+      .nav-item { display: grid; justify-items: center; gap: 4px; padding: 6px; border: 0; color: #9598aa; background: transparent; font-size: 10px; font-weight: 650; cursor: pointer; }
+      .nav-item svg { width: 21px; height: 21px; }
+      .nav-item.active { color: var(--primary); }
+      .add-button {
+        display: grid;
+        width: 56px;
+        height: 56px;
+        place-items: center;
+        justify-self: center;
+        margin-top: -28px;
+        border: 5px solid #f5f6fb;
+        border-radius: 20px;
+        color: white;
+        background: linear-gradient(145deg, #8279ff, #5549db);
+        box-shadow: 0 7px 18px rgb(98 88 232 / 32%);
+        cursor: pointer;
+      }
+      .add-button svg { width: 24px; height: 24px; }
+      .overlay { position: fixed; z-index: 8; inset: 0; display: flex; align-items: flex-end; justify-content: center; background: rgb(22 24 43 / 48%); }
+      .overlay[hidden] { display: none; }
+      .sheet {
+        width: min(100%, 560px);
+        padding: 10px 22px calc(22px + var(--safe-bottom));
+        border-radius: 25px 25px 0 0;
+        background: #fff;
+        box-shadow: 0 -12px 40px rgb(18 20 40 / 15%);
+        animation: rise .2s ease-out;
+      }
+      @keyframes rise { from { transform: translateY(24px); opacity: .7; } to { transform: translateY(0); opacity: 1; } }
+      .sheet-handle { width: 38px; height: 4px; margin: 2px auto 18px; border-radius: 4px; background: #dedfe8; }
+      .sheet-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 17px; }
+      .sheet-header h2 { margin: 0; font-size: 20px; letter-spacing: -.5px; }
+      .close-button { display: grid; width: 36px; height: 36px; place-items: center; border: 0; border-radius: 50%; color: #777b91; background: #f5f6fa; cursor: pointer; }
+      .form-field { display: grid; gap: 7px; margin: 13px 0; }
+      .form-field label { color: #54576c; font-size: 12px; font-weight: 700; }
+      .field { width: 100%; height: 47px; padding: 0 13px; border: 1px solid var(--line); border-radius: 13px; outline: none; background: #fbfbfd; font-size: 14px; }
+      .submit-button { width: 100%; margin-top: 8px; }
+      .toast { position: fixed; z-index: 10; right: 18px; bottom: calc(92px + var(--safe-bottom)); left: 18px; width: fit-content; max-width: calc(100% - 36px); margin: 0 auto; padding: 12px 16px; border-radius: 12px; color: #fff; background: #292b3d; box-shadow: 0 6px 20px rgb(0 0 0 / 20%); font-size: 13px; }
+      .toast[hidden] { display: none; }
+      .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+      @media (min-width: 700px) {
+        .app-shell { padding-bottom: 35px; }
+        .topbar { padding-right: max(24px, calc((100% - 620px) / 2)); padding-left: max(24px, calc((100% - 620px) / 2)); }
+        .bottom-nav { right: 50%; bottom: 18px; left: auto; width: min(440px, calc(100% - 32px)); height: 70px; padding-bottom: 0; border: 1px solid var(--line); border-radius: 22px; transform: translateX(50%); }
+        .toast { bottom: 105px; }
+      }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13.5a5 5 0 0 0 7.07 0l2-2a5 5 0 0 0-7.07-7.07l-1.15 1.15"/><path d="M14 10.5a5 5 0 0 0-7.07 0l-2 2A5 5 0 0 0 12 19.57l1.15-1.15"/></svg>
+          </div>
+          <div>
+            <p class="brand-name">Linkspace</p>
+            <p class="brand-subtitle">Semua tautan, satu tempat</p>
+          </div>
+        </div>
+        <span class="count-pill" id="link-count">0 tautan</span>
+      </header>
+
+      <main>
+        <section id="home-view" aria-labelledby="home-title">
+          <div class="hero">
+            <p class="eyebrow">Ruang favorit Anda</p>
+            <h1 id="home-title">Mau ke mana hari ini?</h1>
+            <p class="hero-copy">Satu ketukan untuk membuka situs favoritmu.</p>
+          </div>
+          <label class="search-wrap">
+            <span class="visually-hidden">Cari tautan</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+            <input id="search-input" class="search" type="search" placeholder="Cari nama, kategori, atau URL..." autocomplete="off">
+          </label>
+          <div class="section-heading">
+            <h2>Tautan favorit</h2>
+            <span class="section-hint" id="results-hint"></span>
+          </div>
+          <div id="link-list" class="link-list" aria-live="polite"></div>
+        </section>
+
+        <section id="data-view" class="data-panel" aria-labelledby="data-title" hidden>
+          <div class="hero">
+            <p class="eyebrow">Kelola koleksi</p>
+            <h1 id="data-title">Data JSON</h1>
+            <p class="hero-copy">Cadangkan, salin, atau pulihkan daftar tautanmu.</p>
+          </div>
+          <label for="json-output" class="visually-hidden">Data tautan dalam format JSON</label>
+          <textarea id="json-output" class="json-box" readonly spellcheck="false"></textarea>
+          <div class="data-actions">
+            <button type="button" class="button primary" id="copy-json">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>
+              Salin JSON
+            </button>
+            <button type="button" class="button" id="download-json">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg>
+              Unduh JSON
+            </button>
+            <button type="button" class="button danger" id="reset-data">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m5 4v6m4-6v6"/></svg>
+              Reset ke Awal
+            </button>
+          </div>
+        </section>
+      </main>
+
+      <nav class="bottom-nav" aria-label="Navigasi utama">
+        <button type="button" class="nav-item active" data-view="home" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/></svg>
+          Beranda
+        </button>
+        <button type="button" class="add-button" id="open-add" aria-label="Tambah tautan">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <button type="button" class="nav-item" data-view="data">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16M4 12h16M4 19h16"/><circle cx="8" cy="5" r="1"/><circle cx="16" cy="12" r="1"/><circle cx="10" cy="19" r="1"/></svg>
+          Data JSON
+        </button>
+      </nav>
+    </div>
+
+    <div id="add-overlay" class="overlay" hidden>
+      <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <div class="sheet-header">
+          <h2 id="sheet-title">Tambah tautan</h2>
+          <button type="button" class="close-button" id="close-add" aria-label="Tutup">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m18 6-12 12M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <form id="add-form">
+          <div class="form-field">
+            <label for="name-input">Nama situs</label>
+            <input id="name-input" class="field" name="name" placeholder="Contoh: Notion" maxlength="60" required>
+          </div>
+          <div class="form-field">
+            <label for="url-input">URL</label>
+            <input id="url-input" class="field" name="url" type="url" inputmode="url" placeholder="https://contoh.com" required>
+          </div>
+          <div class="form-field">
+            <label for="category-input">Kategori</label>
+            <input id="category-input" class="field" name="category" placeholder="Contoh: Produktivitas" maxlength="40" required>
+          </div>
+          <button type="submit" class="button primary submit-button">Simpan tautan</button>
+        </form>
+      </section>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+    <script id="initial-data" type="application/json">
+      [
+        {"id":"gemini","name":"Gemini","url":"https://gemini.google.com","category":"AI"},
+        {"id":"github","name":"GitHub","url":"https://github.com","category":"Code & Repo"},
+        {"id":"vercel","name":"Vercel","url":"https://vercel.com","category":"Deployment"},
+        {"id":"manus","name":"Manus","url":"https://manus.im","category":"AI Agent"}
+      ]
+    </script>
+    <script>
+      (() => {
+        const STORAGE_KEY = "linkspace.links.v1";
+        const initialLinks = JSON.parse(document.getElementById("initial-data").textContent);
+        const homeView = document.getElementById("home-view");
+        const dataView = document.getElementById("data-view");
+        const list = document.getElementById("link-list");
+        const searchInput = document.getElementById("search-input");
+        const jsonOutput = document.getElementById("json-output");
+        const count = document.getElementById("link-count");
+        const overlay = document.getElementById("add-overlay");
+        const form = document.getElementById("add-form");
+        let toastTimer;
+        let links = readSavedLinks();
+
+        function readSavedLinks() {
+          try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved === null) {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(initialLinks));
+              return initialLinks.map((item) => ({ ...item }));
+            }
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.every(isValidLink)) return parsed;
+            throw new Error("Data tersimpan tidak valid.");
+          } catch (error) {
+            console.error("Gagal membaca data tautan:", error);
+            showToast("Data tersimpan tidak dapat dibaca. Daftar awal dipulihkan.");
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(initialLinks));
+            } catch (storageError) {
+              console.error("Gagal menyimpan data awal:", storageError);
+            }
+            return initialLinks.map((item) => ({ ...item }));
+          }
+        }
+
+        function isValidLink(item) {
+          return item && typeof item.id === "string" && typeof item.name === "string"
+            && typeof item.url === "string" && typeof item.category === "string";
+        }
+
+        function saveLinks(nextLinks = links) {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(nextLinks));
+            links = nextLinks;
+            render();
+            return true;
+          } catch (error) {
+            console.error("Gagal menyimpan data tautan:", error);
+            showToast("Perubahan tidak dapat disimpan di perangkat ini.");
+            return false;
+          }
+        }
+
+        function showToast(message) {
+          const toast = document.getElementById("toast");
+          toast.textContent = message;
+          toast.hidden = false;
+          clearTimeout(toastTimer);
+          toastTimer = setTimeout(() => { toast.hidden = true; }, 2800);
+        }
+
+        function iconFor(name) {
+          const colors = {
+            gemini: ["#3978e8", "#edf3ff"],
+            github: ["#202335", "#f0f1f5"],
+            vercel: ["#252638", "#f0f1f5"],
+            manus: ["#d36b46", "#fff1ea"]
+          };
+          const [color, background] = colors[name.toLowerCase()] || ["#6258e8", "#efeeff"];
+          return { color, background, letter: name.trim().charAt(0).toUpperCase() || "?" };
+        }
+
+        function render() {
+          const query = searchInput.value.trim().toLocaleLowerCase("id");
+          const filtered = links.filter((item) =>
+            [item.name, item.url, item.category].some((value) => value.toLocaleLowerCase("id").includes(query))
+          );
+          count.textContent = `${links.length} tautan`;
+          document.getElementById("results-hint").textContent = query ? `${filtered.length} ditemukan` : `${links.length} tersimpan`;
+          list.replaceChildren();
+          if (!filtered.length) {
+            const empty = document.createElement("div");
+            empty.className = "empty-state";
+            empty.innerHTML = `<strong>${query ? "Tautan tidak ditemukan" : "Belum ada tautan"}</strong>${query ? "Coba kata kunci yang berbeda." : "Ketuk tombol + untuk menambahkan situs favorit."}`;
+            list.append(empty);
+          }
+          filtered.forEach((item) => {
+            const card = document.createElement("article");
+            card.className = "link-card";
+            card.tabIndex = 0;
+            card.setAttribute("role", "link");
+            card.setAttribute("aria-label", `Buka ${item.name}`);
+            const icon = iconFor(item.name);
+            const iconEl = document.createElement("span");
+            iconEl.className = "site-icon";
+            iconEl.textContent = icon.letter;
+            iconEl.style.setProperty("--icon-color", icon.color);
+            iconEl.style.setProperty("--icon-bg", icon.background);
+            const info = document.createElement("span");
+            info.className = "link-info";
+            const name = document.createElement("span");
+            name.className = "link-name";
+            name.textContent = item.name;
+            const url = document.createElement("span");
+            url.className = "link-url";
+            url.textContent = item.url.replace(/^https?:\/\//, "");
+            const category = document.createElement("span");
+            category.className = "link-category";
+            category.textContent = item.category;
+            info.append(name, url, category);
+
+            const actions = document.createElement("span");
+            actions.className = "card-actions";
+            const remove = document.createElement("button");
+            remove.type = "button";
+            remove.className = "icon-button";
+            remove.setAttribute("aria-label", `Hapus ${item.name}`);
+            remove.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m5 4v6m4-6v6"/></svg>';
+            remove.addEventListener("click", (event) => {
+              event.stopPropagation();
+              if (saveLinks(links.filter((link) => link.id !== item.id))) showToast(`${item.name} dihapus.`);
+            });
+            const open = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            open.setAttribute("viewBox", "0 0 24 24");
+            open.setAttribute("fill", "none");
+            open.setAttribute("stroke", "currentColor");
+            open.setAttribute("stroke-width", "1.8");
+            open.setAttribute("stroke-linecap", "round");
+            open.setAttribute("stroke-linejoin", "round");
+            open.classList.add("open-icon");
+            open.innerHTML = '<path d="M14 3h7v7M10 14 21 3"/><path d="M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6"/>';
+            actions.append(remove, open);
+            card.append(iconEl, info, actions);
+            const navigate = () => { window.location.href = item.url; };
+            card.addEventListener("click", navigate);
+            card.addEventListener("keydown", (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                navigate();
+              }
+            });
+            list.append(card);
+          });
+          jsonOutput.value = JSON.stringify(links, null, 2);
+        }
+
+        function setView(view) {
+          const showingHome = view === "home";
+          homeView.hidden = !showingHome;
+          dataView.hidden = showingHome;
+          document.querySelectorAll(".nav-item").forEach((button) => {
+            const active = button.dataset.view === view;
+            button.classList.toggle("active", active);
+            if (active) button.setAttribute("aria-current", "page");
+            else button.removeAttribute("aria-current");
+          });
+        }
+
+        function closeSheet() {
+          overlay.hidden = true;
+          document.getElementById("open-add").focus();
+        }
+
+        document.querySelectorAll(".nav-item").forEach((button) => {
+          button.addEventListener("click", () => setView(button.dataset.view));
+        });
+        searchInput.addEventListener("input", render);
+        document.getElementById("open-add").addEventListener("click", () => {
+          overlay.hidden = false;
+          document.getElementById("name-input").focus();
+        });
+        document.getElementById("close-add").addEventListener("click", closeSheet);
+        overlay.addEventListener("click", (event) => {
+          if (event.target === overlay) closeSheet();
+        });
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape" && !overlay.hidden) closeSheet();
+        });
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+          const fields = new FormData(form);
+          const name = String(fields.get("name")).trim();
+          const url = String(fields.get("url")).trim();
+          const category = String(fields.get("category")).trim();
+          let parsedUrl;
+          try { parsedUrl = new URL(url); } catch { parsedUrl = null; }
+          if (!parsedUrl || !["http:", "https:"].includes(parsedUrl.protocol)) {
+            showToast("Masukkan URL yang valid dengan http:// atau https://.");
+            document.getElementById("url-input").focus();
+            return;
+          }
+          const id = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+          if (saveLinks([...links, { id, name, url: parsedUrl.href, category }])) {
+            form.reset();
+            closeSheet();
+            showToast(`${name} berhasil ditambahkan.`);
+          }
+        });
+        document.getElementById("copy-json").addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(jsonOutput.value);
+            showToast("JSON berhasil disalin.");
+          } catch (error) {
+            console.error("Gagal menyalin JSON:", error);
+            jsonOutput.focus();
+            jsonOutput.select();
+            showToast("Salin otomatis gagal. Pilih JSON lalu salin manual.");
+          }
+        });
+        document.getElementById("download-json").addEventListener("click", () => {
+          const blob = new Blob([jsonOutput.value], { type: "application/json" });
+          const downloadUrl = URL.createObjectURL(blob);
+          const anchor = document.createElement("a");
+          anchor.href = downloadUrl;
+          anchor.download = "linkspace-data.json";
+          anchor.click();
+          URL.revokeObjectURL(downloadUrl);
+          showToast("File JSON diunduh.");
+        });
+        document.getElementById("reset-data").addEventListener("click", () => {
+          if (saveLinks(initialLinks.map((item) => ({ ...item })))) showToast("Data dikembalikan ke daftar awal.");
+        });
+
+        render();
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "appId": "com.linkspace.favorites",
+  "appName": "Linkspace",
+  "webDir": "www",
+  "server": {
+    "allowNavigation": ["*"]
+  }
+}
